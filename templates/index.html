@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Data Visualization Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- 3D Animated Background Elements -->
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+    <div class="bg-orb bg-orb-3"></div>
+    <div class="bg-grid"></div>
+    <div class="mouse-light" id="mouseLight"></div>
+    
+    <!-- Nano Particles Container -->
+    <div id="particles-container"></div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="header-title">
+                    <div class="logo-icon">📊</div>
+                    <div>
+                        <h1>Live Data Visualization Dashboard</h1>
+                        <div class="subtitle">Real-time data analytics and visualization platform</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="main-grid">
+            <!-- Control Panel -->
+            <div class="panel-3d control-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <span>⚙️</span>
+                        Control Panel
+                    </div>
+                    <div class="panel-subtitle">Configure your data visualization</div>
+                </div>
+
+                <!-- Dataset Selection -->
+                <div class="form-group">
+                    <label class="form-label">Dataset Source</label>
+                    <select class="form-control" id="dataset">
+                        <option value="">Select Dataset</option>
+                        <option value="stock">📈 Stock Market</option>
+                        <option value="weather">🌤️ Weather Data</option>
+                        <option value="air_quality">💨 Air Quality</option>
+                        <option value="crypto">₿ Cryptocurrency</option>
+                    </select>
+                </div>
+
+                <!-- Examples Dropdown -->
+                <div class="form-group" id="examples-group" style="display: none;">
+                    <label class="form-label">Popular Examples</label>
+                    <select class="form-control" id="examples">
+                        <option value="">Choose an example...</option>
+                    </select>
+                    <span class="form-hint">Select from popular choices or type your own</span>
+                </div>
+
+                <!-- Input Field -->
+                <div class="form-group">
+                    <label class="form-label" id="input-label">Input Value</label>
+                    <input type="text" class="form-control" id="input" placeholder="Select dataset first...">
+                    <span class="form-hint" id="input-hint"></span>
+                </div>
+
+                <!-- Quick Start -->
+                <div class="quick-start">
+                    <div class="quick-start-title">
+                        <span>🚀</span>
+                        Quick Start
+                    </div>
+                    <div class="quick-grid">
+                        <button class="quick-btn" data-dataset="stock" data-value="AAPL">📈 Apple</button>
+                        <button class="quick-btn" data-dataset="crypto" data-value="bitcoin">₿ Bitcoin</button>
+                        <button class="quick-btn" data-dataset="weather" data-value="London">🌤️ London</button>
+                        <button class="quick-btn" data-dataset="air_quality" data-value="Delhi">💨 Delhi</button>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="btn-group">
+                    <button class="btn btn-secondary" id="fetch-btn">
+                        <span>📥</span>
+                        Fetch Data
+                    </button>
+                    <button class="btn btn-primary" id="generate-btn" disabled>
+                        <span>📊</span>
+                        Generate Visualization
+                    </button>
+                </div>
+
+                <!-- Plot Configuration -->
+                <div class="form-group">
+                    <label class="form-label">Graph Type</label>
+                    <select class="form-control" id="plot-type">
+                        <option value="">Select Plot Type</option>
+                        <option value="line">📈 Line Plot</option>
+                        <option value="bar">📊 Bar Plot</option>
+                        <option value="scatter">🔵 Scatter Plot</option>
+                        <option value="histogram">📉 Histogram</option>
+                        <option value="box">📦 Box Plot</option>
+                        <option value="heatmap">🔥 Heatmap</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">X-Axis</label>
+                    <select class="form-control" id="x-axis" disabled>
+                        <option value="">Fetch data first</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Y-Axis</label>
+                    <select class="form-control" id="y-axis" disabled>
+                        <option value="">Fetch data first</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Hue (Optional)</label>
+                    <select class="form-control" id="hue" disabled>
+                        <option value="">None</option>
+                    </select>
+                </div>
+
+                <!-- Info Box -->
+                <div class="info-box">
+                    <div class="info-box-title">
+                        <span>💡</span>
+                        How to Use
+                    </div>
+                    <ul class="info-list">
+                        <li><strong>Step 1:</strong> Select dataset type</li>
+                        <li><strong>Step 2:</strong> Choose example or input</li>
+                        <li><strong>Step 3:</strong> Fetch the data</li>
+                        <li><strong>Step 4:</strong> Configure visualization</li>
+                        <li><strong>Step 5:</strong> Generate chart</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Visualization Panel -->
+            <div class="panel-3d viz-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <span>📊</span>
+                        Visualization Output
+                    </div>
+                    <div class="panel-subtitle">Live data charts and analytics</div>
+                </div>
+
+                <!-- Welcome State -->
+                <div class="welcome" id="welcome">
+                    <div class="welcome-icon">📊</div>
+                    <h2 class="welcome-title">Welcome to Live Data Dashboard</h2>
+                    <p class="welcome-text">
+                        Visualize real-time data from multiple sources including stock markets, weather stations, 
+                        air quality monitors, and cryptocurrency exchanges. Select a dataset and get started.
+                    </p>
+                    <div class="features">
+                        <div class="feature">
+                            <div class="feature-icon">📈</div>
+                            <div class="feature-label">Stock Data</div>
+                        </div>
+                        <div class="feature">
+                            <div class="feature-icon">🌤️</div>
+                            <div class="feature-label">Weather Info</div>
+                        </div>
+                        <div class="feature">
+                            <div class="feature-icon">💨</div>
+                            <div class="feature-label">Air Quality</div>
+                        </div>
+                        <div class="feature">
+                            <div class="feature-icon">₿</div>
+                            <div class="feature-label">Crypto Prices</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div class="loading" id="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <div class="loading-text">Fetching live data...</div>
+                </div>
+
+                <!-- Error State -->
+                <div class="error-msg" id="error" style="display: none;">
+                    <div class="error-icon">⚠️</div>
+                    <div class="error-text" id="error-text"></div>
+                </div>
+
+                <!-- Plot Output -->
+                <div class="plot-container" id="plot-container" style="display: none;">
+                    <img id="plot-img" src="" alt="Visualization">
+                </div>
+
+                <!-- Data Preview -->
+                <div class="data-preview" id="preview" style="display: none;">
+                    <h3 class="preview-header">📋 Data Preview (First 5 Rows)</h3>
+                    <div class="table-wrapper">
+                        <table id="preview-table"></table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // NANO PARTICLES SYSTEM - Follows Mouse
+        // =========================================================================
+        
+        class ParticleSystem {
+            constructor() {
+                this.container = document.getElementById('particles-container');
+                this.particles = [];
+                this.particleCount = 200; // Number of nano particles
+                this.mouseX = window.innerWidth / 2;
+                this.mouseY = window.innerHeight / 2;
+                this.targetX = this.mouseX;
+                this.targetY = this.mouseY;
+                
+                this.init();
+            }
+            
+            init() {
+                // Create particles
+                for (let i = 0; i < this.particleCount; i++) {
+                    this.createParticle();
+                }
+                
+                // Track mouse position
+                document.addEventListener('mousemove', (e) => {
+                    this.targetX = e.clientX;
+                    this.targetY = e.clientY;
+                });
+                
+                // Start animation loop
+                this.animate();
+            }
+            
+            createParticle() {
+                const particle = {
+                    element: document.createElement('div'),
+                    x: Math.random() * window.innerWidth,
+                    y: Math.random() * window.innerHeight,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    size: Math.random() < 0.6 ? 'small' : (Math.random() < 0.8 ? 'medium' : 'large'),
+                    baseSpeed: 0.3 + Math.random() * 0.7,
+                    attractionStrength: 0.02 + Math.random() * 0.03
+                };
+                
+                particle.element.className = `particle ${particle.size}`;
+                this.container.appendChild(particle.element);
+                this.particles.push(particle);
+            }
+            
+            animate() {
+                // Smooth mouse following
+                this.mouseX += (this.targetX - this.mouseX) * 0.1;
+                this.mouseY += (this.targetY - this.mouseY) * 0.1;
+                
+                this.particles.forEach(particle => {
+                    // Calculate distance to mouse
+                    const dx = this.mouseX - particle.x;
+                    const dy = this.mouseY - particle.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    // Attraction to mouse (closer = stronger)
+                    const maxDistance = 300;
+                    if (distance < maxDistance) {
+                        const force = (1 - distance / maxDistance) * particle.attractionStrength;
+                        particle.vx += dx * force;
+                        particle.vy += dy * force;
+                    }
+                    
+                    // Apply velocity
+                    particle.x += particle.vx * particle.baseSpeed;
+                    particle.y += particle.vy * particle.baseSpeed;
+                    
+                    // Damping (slow down over time)
+                    particle.vx *= 0.98;
+                    particle.vy *= 0.98;
+                    
+                    // Wrap around screen edges
+                    if (particle.x < -20) particle.x = window.innerWidth + 20;
+                    if (particle.x > window.innerWidth + 20) particle.x = -20;
+                    if (particle.y < -20) particle.y = window.innerHeight + 20;
+                    if (particle.y > window.innerHeight + 20) particle.y = -20;
+                    
+                    // Random wandering
+                    particle.vx += (Math.random() - 0.5) * 0.1;
+                    particle.vy += (Math.random() - 0.5) * 0.1;
+                    
+                    // Update position
+                    particle.element.style.transform = `translate(${particle.x}px, ${particle.y}px)`;
+                    
+                    // Fade based on distance from mouse
+                    const opacity = distance < maxDistance ? 0.8 : 0.4;
+                    particle.element.style.opacity = opacity;
+                });
+                
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+        
+        // Initialize particle system
+        const particleSystem = new ParticleSystem();
+        
+        // =========================================================================
+        // 3D Background Mouse Interaction
+        // =========================================================================
+        
+        const mouseLight = document.getElementById('mouseLight');
+        let mouseLightX = 0;
+        let mouseLightY = 0;
+        let currentLightX = 0;
+        let currentLightY = 0;
+
+        // Track mouse movement for light
+        document.addEventListener('mousemove', (e) => {
+            mouseLightX = e.clientX;
+            mouseLightY = e.clientY;
+        });
+
+        // Smooth animation loop for mouse light
+        function animateMouseLight() {
+            const dx = mouseLightX - currentLightX;
+            const dy = mouseLightY - currentLightY;
+            
+            currentLightX += dx * 0.1;
+            currentLightY += dy * 0.1;
+            
+            mouseLight.style.transform = `translate(${currentLightX - 300}px, ${currentLightY - 300}px)`;
+            
+            requestAnimationFrame(animateMouseLight);
+        }
+
+        animateMouseLight();
+
+        // 3D Panel parallax effect on mouse move
+        const panels = document.querySelectorAll('.panel-3d');
+        
+        document.addEventListener('mousemove', (e) => {
+            const x = e.clientX / window.innerWidth - 0.5;
+            const y = e.clientY / window.innerHeight - 0.5;
+            
+            panels.forEach((panel, index) => {
+                const depth = (index + 1) * 5;
+                const moveX = x * depth;
+                const moveY = y * depth;
+                
+                panel.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+        });
+
+        // =========================================================================
+        // Dashboard Functionality (Original Code)
+        // =========================================================================
+        
+        // Global variables
+        let currentColumns = [];
+        let dataFetched = false;
+
+        // DOM Elements
+        const datasetSelect = document.getElementById('dataset');
+        const examplesGroup = document.getElementById('examples-group');
+        const examplesSelect = document.getElementById('examples');
+        const inputField = document.getElementById('input');
+        const inputLabel = document.getElementById('input-label');
+        const inputHint = document.getElementById('input-hint');
+        const plotTypeSelect = document.getElementById('plot-type');
+        const xAxisSelect = document.getElementById('x-axis');
+        const yAxisSelect = document.getElementById('y-axis');
+        const hueSelect = document.getElementById('hue');
+        const fetchBtn = document.getElementById('fetch-btn');
+        const generateBtn = document.getElementById('generate-btn');
+        const loadingIndicator = document.getElementById('loading');
+        const errorMessage = document.getElementById('error');
+        const errorText = document.getElementById('error-text');
+        const welcome = document.getElementById('welcome');
+        const plotContainer = document.getElementById('plot-container');
+        const plotImage = document.getElementById('plot-img');
+        const dataPreview = document.getElementById('preview');
+        const previewTable = document.getElementById('preview-table');
+
+        // Update input label and fetch examples based on dataset selection
+        datasetSelect.addEventListener('change', async function() {
+            const dataset = this.value;
+            
+            if (dataset === 'stock') {
+                inputLabel.textContent = 'Stock Symbol';
+                inputField.placeholder = 'e.g., AAPL, TSLA, MSFT';
+                inputHint.textContent = 'Enter stock ticker symbol';
+            } else if (dataset === 'weather') {
+                inputLabel.textContent = 'City Name';
+                inputField.placeholder = 'e.g., London, New York, Tokyo';
+                inputHint.textContent = 'Enter any major city name';
+            } else if (dataset === 'air_quality') {
+                inputLabel.textContent = 'City Name';
+                inputField.placeholder = 'e.g., Delhi, Beijing, Paris';
+                inputHint.textContent = 'Only cities with monitoring stations';
+            } else if (dataset === 'crypto') {
+                inputLabel.textContent = 'Cryptocurrency';
+                inputField.placeholder = 'e.g., bitcoin, ethereum, dogecoin';
+                inputHint.textContent = 'Enter cryptocurrency name (lowercase)';
+            } else {
+                inputLabel.textContent = 'Input Value';
+                inputField.placeholder = 'Select dataset first...';
+                inputHint.textContent = '';
+            }
+            
+            // Fetch and populate examples
+            if (dataset) {
+                await loadExamples(dataset);
+                examplesGroup.style.display = 'block';
+            } else {
+                examplesGroup.style.display = 'none';
+            }
+            
+            // Reset state
+            dataFetched = false;
+            resetAxisSelectors();
+        });
+
+        // When user selects an example, populate input field
+        examplesSelect.addEventListener('change', function() {
+            if (this.value) {
+                inputField.value = this.value;
+            }
+        });
+
+        // Quick Start Buttons
+        document.querySelectorAll('.quick-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const dataset = this.getAttribute('data-dataset');
+                const value = this.getAttribute('data-value');
+                
+                // Set dataset and input
+                datasetSelect.value = dataset;
+                datasetSelect.dispatchEvent(new Event('change'));
+                
+                // Wait a bit for examples to load
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                inputField.value = value;
+                
+                // Automatically fetch data
+                fetchBtn.click();
+            });
+        });
+
+        // Load examples from backend
+        async function loadExamples(dataset) {
+            try {
+                const response = await fetch('/get_examples', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ dataset: dataset })
+                });
+
+                const data = await response.json();
+                
+                // Clear and populate examples dropdown
+                examplesSelect.innerHTML = '<option value="">Choose an example...</option>';
+                
+                if (data.examples && data.examples.length > 0) {
+                    data.examples.forEach(example => {
+                        const option = new Option(example.label, example.value);
+                        examplesSelect.add(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading examples:', error);
+            }
+        }
+
+        // Fetch Data Button
+        fetchBtn.addEventListener('click', async function() {
+            const dataset = datasetSelect.value;
+            const input = inputField.value.trim();
+
+            // Validation
+            if (!dataset) {
+                showError('Please select a dataset');
+                return;
+            }
+            if (!input) {
+                showError('Please enter an input value or select from examples');
+                return;
+            }
+
+            // Show loading
+            showLoading();
+            hideError();
+            welcome.style.display = 'none';
+            plotContainer.style.display = 'none';
+            dataPreview.style.display = 'none';
+
+            try {
+                const response = await fetch('/get_columns', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        dataset: dataset,
+                        input: input
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to fetch data');
+                }
+
+                // Populate axis selectors
+                currentColumns = data.columns;
+                populateAxisSelectors(data.columns);
+                
+                // Show data preview
+                displayDataPreview(data.preview);
+                
+                // Enable generate button
+                generateBtn.disabled = false;
+                dataFetched = true;
+
+                hideLoading();
+
+            } catch (error) {
+                hideLoading();
+                showError(error.message);
+            }
+        });
+
+        // Generate Plot Button
+        generateBtn.addEventListener('click', async function() {
+            const dataset = datasetSelect.value;
+            const input = inputField.value.trim();
+            const plotType = plotTypeSelect.value;
+            const xAxis = xAxisSelect.value;
+            const yAxis = yAxisSelect.value;
+            const hue = hueSelect.value;
+
+            // Validation
+            if (!plotType) {
+                showError('Please select a plot type');
+                return;
+            }
+            
+            if (plotType !== 'heatmap') {
+                if (!xAxis || !yAxis) {
+                    showError('Please select both X and Y axes');
+                    return;
+                }
+            }
+
+            // Show loading
+            showLoading();
+            hideError();
+            plotContainer.style.display = 'none';
+
+            try {
+                const response = await fetch('/generate_plot', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        dataset: dataset,
+                        input: input,
+                        plot_type: plotType,
+                        x_axis: xAxis,
+                        y_axis: yAxis,
+                        hue: hue
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to generate plot');
+                }
+
+                // Display plot
+                plotImage.src = 'data:image/png;base64,' + data.image;
+                plotContainer.style.display = 'block';
+
+                hideLoading();
+
+            } catch (error) {
+                hideLoading();
+                showError(error.message);
+            }
+        });
+
+        // Helper Functions
+        function populateAxisSelectors(columns) {
+            // Clear existing options
+            xAxisSelect.innerHTML = '<option value="">Select column</option>';
+            yAxisSelect.innerHTML = '<option value="">Select column</option>';
+            hueSelect.innerHTML = '<option value="">None</option>';
+
+            // Add columns to selectors
+            columns.forEach(col => {
+                const xOption = new Option(col, col);
+                const yOption = new Option(col, col);
+                const hueOption = new Option(col, col);
+                
+                xAxisSelect.add(xOption);
+                yAxisSelect.add(yOption);
+                hueSelect.add(hueOption);
+            });
+
+            // Enable selectors
+            xAxisSelect.disabled = false;
+            yAxisSelect.disabled = false;
+            hueSelect.disabled = false;
+        }
+
+        function resetAxisSelectors() {
+            xAxisSelect.innerHTML = '<option value="">Fetch data first</option>';
+            yAxisSelect.innerHTML = '<option value="">Fetch data first</option>';
+            hueSelect.innerHTML = '<option value="">None</option>';
+            
+            xAxisSelect.disabled = true;
+            yAxisSelect.disabled = true;
+            hueSelect.disabled = true;
+            
+            generateBtn.disabled = true;
+        }
+
+        function displayDataPreview(previewData) {
+            if (!previewData || previewData.length === 0) return;
+
+            // Create table
+            let tableHTML = '<thead><tr>';
+            
+            // Headers
+            Object.keys(previewData[0]).forEach(key => {
+                tableHTML += `<th>${key}</th>`;
+            });
+            tableHTML += '</tr></thead><tbody>';
+
+            // Rows
+            previewData.forEach(row => {
+                tableHTML += '<tr>';
+                Object.values(row).forEach(value => {
+                    tableHTML += `<td>${value !== null ? value : 'N/A'}</td>`;
+                });
+                tableHTML += '</tr>';
+            });
+            tableHTML += '</tbody>';
+
+            previewTable.innerHTML = tableHTML;
+            dataPreview.style.display = 'block';
+        }
+
+        function showLoading() {
+            loadingIndicator.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            loadingIndicator.style.display = 'none';
+        }
+
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.style.display = 'flex';
+            
+            // Auto-hide after 8 seconds
+            setTimeout(() => {
+                hideError();
+            }, 8000);
+        }
+
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
