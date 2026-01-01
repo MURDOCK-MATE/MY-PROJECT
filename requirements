@@ -1,8 +1,0 @@
-Flask==3.0.0
-pandas==2.1.4
-matplotlib==3.8.2
-seaborn==0.13.1
-yfinance==0.2.36
-requests==2.31.0
-Werkzeug==3.0.1 
-Pillow==10.1.0
