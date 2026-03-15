@@ -7,6 +7,7 @@ visualizations using Seaborn and Matplotlib.
 
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
+import numpy as np
 import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
@@ -448,6 +449,150 @@ def generate_plot():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# ==============================================================================
+# AWP (ANTENNA & WAVE PROPAGATION) - GTU DASHBOARD
+# ==============================================================================
+
+def dipole_pattern(theta, L_over_lambda):
+    """
+    Compute the normalised E-field radiation pattern for a centre-fed dipole.
+
+    Uses the standard formula:
+        E(θ) = |[cos(β·L/2·cosθ) − cos(β·L/2)] / sinθ|
+    where β = 2π/λ, so  β·L/2 = π·(L/λ).
+
+    Args:
+        theta (np.ndarray): Angles in radians, shape (N,)
+        L_over_lambda (float): Dipole length normalised to wavelength
+
+    Returns:
+        np.ndarray: Normalised pattern values in [0, 1]
+    """
+    beta_L_half = np.pi * L_over_lambda          # β·L/2
+    sin_theta = np.sin(theta)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        numerator = np.cos(beta_L_half * np.cos(theta)) - np.cos(beta_L_half)
+        E = np.where(np.abs(sin_theta) < 1e-10, 0.0,
+                     np.abs(numerator / sin_theta))
+    E_max = np.max(E)
+    return E / E_max if E_max > 0 else E
+
+
+def generate_awp_dashboard():
+    """
+    Generate a 6-panel polar radiation-pattern dashboard covering the GTU AWP
+    syllabus:
+
+    Panel 1 – Short Dipole (Hertzian)  : E(θ) = |sinθ|
+    Panel 2 – Half-Wave Dipole (λ/2)   : standard formula, L/λ = 0.5
+    Panel 3 – Full-Wave Dipole (λ)     : standard formula, L/λ = 1.0
+    Panel 4 – 3λ/2 Dipole              : standard formula, L/λ = 1.5
+    Panel 5 – λ/4 Monopole (grounded)  : upper hemisphere only
+    Panel 6 – 2-Element Broadside Array: element × array-factor, d = λ/2
+
+    Returns:
+        str: Base64-encoded PNG image of the 6-panel figure.
+    """
+    theta = np.linspace(0, 2 * np.pi, 1000)
+
+    # ── Panel configurations ───────────────────────────────────────────────
+    # (pattern_array, color, title)
+    panels = []
+
+    # 1. Short / Hertzian dipole  E(θ) = |sinθ|
+    E1 = np.abs(np.sin(theta))
+    panels.append((E1, '#3b82f6',
+                   'Short Dipole (Hertzian)\nL ≪ λ  →  E(θ) = |sin θ|'))
+
+    # 2. Half-wave dipole  L = λ/2
+    E2 = dipole_pattern(theta, 0.5)
+    panels.append((E2, '#10b981',
+                   'Half-Wave Dipole\nL = λ/2'))
+
+    # 3. Full-wave dipole  L = λ
+    E3 = dipole_pattern(theta, 1.0)
+    panels.append((E3, '#ef4444',
+                   'Full-Wave Dipole\nL = λ'))
+
+    # 4. 3λ/2 dipole
+    E4 = dipole_pattern(theta, 1.5)
+    panels.append((E4, '#8b5cf6',
+                   '3λ/2 Dipole\nL = 3λ/2'))
+
+    # 5. Quarter-wave monopole above ground plane
+    #    Pattern = half-wave dipole but zero below the horizon (θ > π/2 and < 3π/2)
+    E5_full = dipole_pattern(theta, 0.5)
+    E5 = np.where((theta <= np.pi / 2) | (theta >= 3 * np.pi / 2), E5_full, 0.0)
+    panels.append((E5, '#f59e0b',
+                   'λ/4 Monopole (Grounded)\nUpper hemisphere only'))
+
+    # 6. 2-element broadside array (d = λ/2, in-phase excitation)
+    #    Array Factor: AF = |cos(π/2 · cosθ)|
+    #    Element pattern: short dipole  |sinθ|
+    AF = np.abs(np.cos(np.pi / 2 * np.cos(theta)))
+    E6 = np.abs(np.sin(theta)) * AF
+    E6_max = np.max(E6)
+    E6 = E6 / E6_max if E6_max > 0 else E6
+    panels.append((E6, '#06b6d4',
+                   '2-Element Broadside Array\nd = λ/2, in-phase'))
+
+    # ── Build figure ───────────────────────────────────────────────────────
+    fig, axes = plt.subplots(2, 3, figsize=(15, 10),
+                             subplot_kw={'projection': 'polar'})
+    fig.patch.set_facecolor('#0f172a')
+    fig.suptitle(
+        'Antenna Radiation Patterns  –  AWP Dashboard (GTU)',
+        fontsize=15, fontweight='bold', color='white', y=1.01
+    )
+
+    for ax, (E, color, title) in zip(axes.flat, panels):
+        ax.set_facecolor('#1e293b')
+        ax.plot(theta, E, color=color, linewidth=2)
+        ax.fill(theta, E, alpha=0.25, color=color)
+        ax.set_title(title, fontsize=9, fontweight='bold',
+                     color='white', pad=12)
+        ax.set_theta_zero_location('N')   # 0° at top (antenna axis)
+        ax.set_theta_direction(-1)        # clockwise
+        ax.grid(True, color='gray', alpha=0.3)
+        ax.tick_params(colors='gray', labelsize=7)
+        ax.set_yticklabels([])
+        ax.set_rlabel_position(45)
+        # Degree labels
+        ax.set_thetagrids([0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330],
+                          labels=['0°', '30°', '60°', '90°', '120°', '150°',
+                                  '180°', '210°', '240°', '270°', '300°', '330°'],
+                          fontsize=6, color='gray')
+        for spine in ax.spines.values():
+            spine.set_edgecolor('#334155')
+
+    plt.tight_layout(pad=2.0)
+
+    buffer = BytesIO()
+    plt.savefig(buffer, format='png', dpi=120, bbox_inches='tight',
+                facecolor=fig.get_facecolor())
+    buffer.seek(0)
+    image_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+    plt.close()
+
+    return image_base64
+
+
+@app.route('/awp')
+def awp():
+    """Render the AWP (Antenna & Wave Propagation) radiation pattern dashboard."""
+    return render_template('awp.html')
+
+
+@app.route('/awp_plot')
+def awp_plot():
+    """Return the 6-panel AWP radiation-pattern dashboard as a base64 PNG."""
+    try:
+        image_base64 = generate_awp_dashboard()
+        return jsonify({'image': image_base64, 'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     import os
