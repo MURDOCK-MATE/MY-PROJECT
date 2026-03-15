@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWP Radiation Patterns – GTU Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ── AWP-specific overrides ───────────────────────────────────────── */
+        .awp-wrapper {
+            position: relative;
+            z-index: 2;
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 0 32px 64px;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 24px;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: white; }
+
+        .awp-card {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            box-shadow:
+                0 12px 24px -4px rgba(0,0,0,0.12),
+                0 4px 8px -2px rgba(0,0,0,0.08),
+                0 0 0 1px rgba(255,255,255,0.1),
+                0 0 40px rgba(59,130,246,0.1);
+            overflow: hidden;
+        }
+
+        .awp-card-header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            padding: 28px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .awp-card-title {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .awp-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 8px 24px rgba(59,130,246,0.4);
+            flex-shrink: 0;
+        }
+
+        .awp-title-text h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: white;
+            letter-spacing: -0.3px;
+        }
+
+        .awp-title-text p {
+            font-size: 13px;
+            color: rgba(255,255,255,0.6);
+            margin-top: 3px;
+        }
+
+        .awp-badge {
+            background: rgba(59,130,246,0.2);
+            border: 1px solid rgba(59,130,246,0.4);
+            color: #93c5fd;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 20px;
+            letter-spacing: 0.3px;
+        }
+
+        .awp-body {
+            padding: 32px;
+        }
+
+        /* Formula box */
+        .formula-box {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border: 1px solid #bfdbfe;
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 28px;
+        }
+
+        .formula-box h3 {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .formula-code {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            color: #1e3a8a;
+            background: rgba(255,255,255,0.7);
+            padding: 10px 16px;
+            border-radius: 8px;
+            border-left: 3px solid #3b82f6;
+        }
+
+        /* Legend grid */
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px 14px;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .legend-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #334155;
+            line-height: 1.4;
+        }
+
+        /* Dashboard image */
+        .dashboard-container {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+            background: #0f172a;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dashboard-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Loading / error inside dashboard */
+        .dash-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            padding: 60px;
+        }
+        .dash-spinner {
+            width: 56px;
+            height: 56px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .dash-loading p {
+            color: rgba(255,255,255,0.6);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .dash-error {
+            color: #fca5a5;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 32px;
+            text-align: center;
+        }
+
+        /* Theory table */
+        .theory-section {
+            margin-top: 36px;
+            padding-top: 28px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .theory-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .theory-table-wrapper {
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+
+        @media (max-width: 768px) {
+            .awp-wrapper { padding: 0 16px 48px; }
+            .awp-body { padding: 20px; }
+            .awp-card-header { padding: 20px; }
+            .legend-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+    <div class="bg-orb bg-orb-3"></div>
+    <div class="bg-grid"></div>
+    <div class="mouse-light" id="mouseLight"></div>
+    <div id="particles-container"></div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="header-title">
+                    <div class="logo-icon">📡</div>
+                    <div>
+                        <h1>AWP Radiation Pattern Dashboard</h1>
+                        <div class="subtitle">Antenna &amp; Wave Propagation – GTU Syllabus</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="awp-wrapper">
+
+        <a class="back-link" href="/">
+            ← Back to Live Data Dashboard
+        </a>
+
+        <div class="awp-card">
+
+            <!-- Card header -->
+            <div class="awp-card-header">
+                <div class="awp-card-title">
+                    <div class="awp-icon">📡</div>
+                    <div class="awp-title-text">
+                        <h2>6-Panel Radiation Pattern Dashboard</h2>
+                        <p>Dipoles · Monopoles · Antenna Arrays</p>
+                    </div>
+                </div>
+                <span class="awp-badge">GTU AWP Syllabus</span>
+            </div>
+
+            <!-- Card body -->
+            <div class="awp-body">
+
+                <!-- General formula -->
+                <div class="formula-box">
+                    <h3>📐 General Formula – Centre-Fed Dipole of Length L</h3>
+                    <div class="formula-code">
+                        E(θ) = [ cos(β·L/2·cosθ) − cos(β·L/2) ] / sinθ &nbsp;&nbsp;&nbsp;
+                        where  β = 2π/λ
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="legend-grid">
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background:#3b82f6;"></div>
+                        <div class="legend-label">Short / Hertzian Dipole (L ≪ λ)</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background:#10b981;"></div>
+                        <div class="legend-label">Half-Wave Dipole (L = λ/2)</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background:#ef4444;"></div>
+                        <div class="legend-label">Full-Wave Dipole (L = λ)</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background:#8b5cf6;"></div>
+                        <div class="legend-label">3λ/2 Dipole (L = 3λ/2)</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background:#f59e0b;"></div>
+                        <div class="legend-label">λ/4 Monopole (Grounded)</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot" style="background:#06b6d4;"></div>
+                        <div class="legend-label">2-Element Broadside Array (d = λ/2)</div>
+                    </div>
+                </div>
+
+                <!-- Dashboard image -->
+                <div class="dashboard-container" id="dashboard-container">
+                    <div class="dash-loading" id="dash-loading">
+                        <div class="dash-spinner"></div>
+                        <p>Generating radiation patterns…</p>
+                    </div>
+                </div>
+
+                <!-- Theory Reference -->
+                <div class="theory-section">
+                    <h3>📚 Quick Reference</h3>
+                    <div class="theory-table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Antenna</th>
+                                    <th>L / λ</th>
+                                    <th>Half-Power BW</th>
+                                    <th>Directivity (dBi)</th>
+                                    <th>Key Feature</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Short Dipole (Hertzian)</td>
+                                    <td>≪ 1</td>
+                                    <td>90°</td>
+                                    <td>1.76</td>
+                                    <td>Ideal sinusoidal element</td>
+                                </tr>
+                                <tr>
+                                    <td>Half-Wave Dipole</td>
+                                    <td>0.5</td>
+                                    <td>78°</td>
+                                    <td>2.15</td>
+                                    <td>Most practical dipole</td>
+                                </tr>
+                                <tr>
+                                    <td>Full-Wave Dipole</td>
+                                    <td>1.0</td>
+                                    <td>47°</td>
+                                    <td>3.82</td>
+                                    <td>Narrower beam, 4-lobe pattern</td>
+                                </tr>
+                                <tr>
+                                    <td>3λ/2 Dipole</td>
+                                    <td>1.5</td>
+                                    <td>~35°</td>
+                                    <td>~3.3</td>
+                                    <td>Multiple side lobes</td>
+                                </tr>
+                                <tr>
+                                    <td>λ/4 Monopole</td>
+                                    <td>0.25 (eff.)</td>
+                                    <td>78°</td>
+                                    <td>5.16</td>
+                                    <td>Upper hemisphere only (ground plane)</td>
+                                </tr>
+                                <tr>
+                                    <td>2-Element Broadside Array</td>
+                                    <td>—</td>
+                                    <td>~60°</td>
+                                    <td>~4.15</td>
+                                    <td>Max radiation at 90°, nulls at 0°/180°</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div><!-- /.awp-body -->
+        </div><!-- /.awp-card -->
+    </div><!-- /.awp-wrapper -->
+
+    <script>
+        // ── Background animations (copied from main page) ─────────────────
+        class ParticleSystem {
+            constructor() {
+                this.container = document.getElementById('particles-container');
+                this.particles = [];
+                this.particleCount = 200;
+                this.mouseX = window.innerWidth / 2;
+                this.mouseY = window.innerHeight / 2;
+                this.targetX = this.mouseX;
+                this.targetY = this.mouseY;
+                this.init();
+            }
+            init() {
+                for (let i = 0; i < this.particleCount; i++) this.createParticle();
+                document.addEventListener('mousemove', e => {
+                    this.targetX = e.clientX;
+                    this.targetY = e.clientY;
+                });
+                this.animate();
+            }
+            createParticle() {
+                const p = {
+                    element: document.createElement('div'),
+                    x: Math.random() * window.innerWidth,
+                    y: Math.random() * window.innerHeight,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    size: Math.random() < 0.6 ? 'small' : (Math.random() < 0.8 ? 'medium' : 'large'),
+                    baseSpeed: 0.3 + Math.random() * 0.7,
+                    attractionStrength: 0.02 + Math.random() * 0.03
+                };
+                p.element.className = `particle ${p.size}`;
+                this.container.appendChild(p.element);
+                this.particles.push(p);
+            }
+            animate() {
+                this.mouseX += (this.targetX - this.mouseX) * 0.1;
+                this.mouseY += (this.targetY - this.mouseY) * 0.1;
+                this.particles.forEach(p => {
+                    const dx = this.mouseX - p.x, dy = this.mouseY - p.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 300) {
+                        const f = (1 - dist/300) * p.attractionStrength;
+                        p.vx += dx*f; p.vy += dy*f;
+                    }
+                    p.x += p.vx * p.baseSpeed;
+                    p.y += p.vy * p.baseSpeed;
+                    p.vx *= 0.98; p.vy *= 0.98;
+                    if (p.x < -20) p.x = window.innerWidth + 20;
+                    if (p.x > window.innerWidth + 20) p.x = -20;
+                    if (p.y < -20) p.y = window.innerHeight + 20;
+                    if (p.y > window.innerHeight + 20) p.y = -20;
+                    p.vx += (Math.random()-0.5)*0.1;
+                    p.vy += (Math.random()-0.5)*0.1;
+                    p.element.style.transform = `translate(${p.x}px,${p.y}px)`;
+                    p.element.style.opacity = dist < 300 ? 0.8 : 0.4;
+                });
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+        new ParticleSystem();
+
+        const mouseLight = document.getElementById('mouseLight');
+        let mlX=0, mlY=0, clX=0, clY=0;
+        document.addEventListener('mousemove', e => { mlX=e.clientX; mlY=e.clientY; });
+        (function animML() {
+            clX += (mlX-clX)*0.1; clY += (mlY-clY)*0.1;
+            mouseLight.style.transform = `translate(${clX-300}px,${clY-300}px)`;
+            requestAnimationFrame(animML);
+        })();
+
+        // ── Load AWP dashboard image ───────────────────────────────────────
+        async function loadDashboard() {
+            const container = document.getElementById('dashboard-container');
+            try {
+                const resp = await fetch('/awp_plot');
+                const data = await resp.json();
+                if (!resp.ok || !data.success) throw new Error(data.error || 'Failed to generate dashboard');
+                container.innerHTML = `<img src="data:image/png;base64,${data.image}" alt="AWP Radiation Pattern Dashboard">`;
+            } catch (err) {
+                container.innerHTML = `<div class="dash-error">⚠️ ${err.message}</div>`;
+            }
+        }
+
+        loadDashboard();
+    </script>
+</body>
+</html>
